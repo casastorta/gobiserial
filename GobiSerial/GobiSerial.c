@@ -49,6 +49,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <linux/usb.h> 
 #include <linux/usb/serial.h>
 #include <linux/version.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION( 3,3,0 ))
+#include <linux/module.h>
+#endif
 
 //---------------------------------------------------------------------------
 // Global veriable and defination
@@ -153,6 +156,7 @@ static struct usb_device_id GobiVIDPIDTable[] =
 {
    { USB_DEVICE( 0x05c6, 0x920c ) },   // Gobi 3000 QDL device
    { USB_DEVICE( 0x05c6, 0x920d ) },   // Gobi 3000 Composite Device
+   { USB_DEVICE( 0x03f0, 0x371d ) },   // Gobi 3000 HP un2430 Device
    { }                               // Terminating entry
 };
 MODULE_DEVICE_TABLE( usb, GobiVIDPIDTable );
@@ -199,6 +203,12 @@ static struct usb_serial_driver gGobiDevice =
    .read_bulk_callback  = GobiReadBulkCallback,
 #endif
 };
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION( 3,4,0 ))
+   static struct usb_serial_driver * const gGobiDevices[] = {
+      &gGobiDevice, NULL
+   };
+#endif
 
 //---------------------------------------------------------------------------
 // USB serial core overridding Methods
@@ -403,7 +413,7 @@ int GobiOpen(
       }
       if (bytesWrote != sizeof( startMessage ))
       {
-         DBG( "invalid write size %d, %d\n", 
+         DBG( "invalid write size %d, %lu\n", 
               bytesWrote, 
               sizeof( startMessage ) );
          return -EIO;
@@ -479,7 +489,7 @@ void GobiClose( struct usb_serial_port * pPort )
       }
       if (bytesWrote != sizeof( stopMessage ))
       {
-         DBG( "invalid write size %d, %d\n", 
+         DBG( "invalid write size %d, %lu\n", 
               bytesWrote, 
               sizeof( stopMessage ) );
       }      
@@ -702,20 +712,27 @@ static int __init GobiInit( void )
 
    gGobiDevice.num_ports = NUM_BULK_EPS;
 
-   // Registering driver to USB serial core layer 
-   nRetval = usb_serial_register( &gGobiDevice );
+   // Registering driver to USB serial core layer
+#if (LINUX_VERSION_CODE < KERNEL_VERSION( 3,4,0 ))
+      nRetval = usb_serial_register( &gGobiDevice );
+#else
+      nRetval = usb_serial_register_drivers( &GobiDriver, gGobiDevices);
+#endif
+
    if (nRetval != 0)
    {
       return nRetval;
    }
 
    // Registering driver to USB core layer
+#if (LINUX_VERSION_CODE < KERNEL_VERSION( 3,4,0 ))
    nRetval = usb_register( &GobiDriver );
    if (nRetval != 0) 
    {
       usb_serial_deregister( &gGobiDevice );
       return nRetval;
    }
+#endif
 
    // This will be shown whenever driver is loaded
    printk( KERN_INFO "%s: %s\n", DRIVER_DESC, DRIVER_VERSION );
@@ -737,8 +754,12 @@ RETURN VALUE:
 static void __exit GobiExit( void )
 {
    gpClose = NULL;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION( 3,4,0 ))
    usb_deregister( &GobiDriver );
    usb_serial_deregister( &gGobiDevice );
+#else
+   usb_serial_deregister_drivers( &GobiDriver, gGobiDevices );
+#endif
 }
 
 // Calling kernel module to init our driver
