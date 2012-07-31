@@ -49,6 +49,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <linux/usb.h> 
 #include <linux/usb/serial.h>
 #include <linux/version.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION( 3,3,0 ))
+#include <linux/module.h>
+#endif
 
 //---------------------------------------------------------------------------
 // Global veriable and defination
