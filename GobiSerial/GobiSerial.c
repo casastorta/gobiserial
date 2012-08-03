@@ -165,11 +165,13 @@ MODULE_DEVICE_TABLE( usb, GobiVIDPIDTable );
 // Struct usb_serial_driver
 // Driver structure we register with the USB core
 /*=========================================================================*/
-static struct usb_driver GobiDriver = 
+static struct usb_driver GobiDriver =
 {
    .name       = "GobiSerial",
+#if ((LINUX_VERSION_CODE < KERNEL_VERSION( 3,5,0 )))
    .probe      = usb_serial_probe,
    .disconnect = usb_serial_disconnect,
+#endif
    .id_table   = GobiVIDPIDTable,
    .suspend    = GobiSuspend,
 #if (LINUX_VERSION_CODE <= KERNEL_VERSION( 2,6,23 ))
