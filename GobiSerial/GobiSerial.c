@@ -717,6 +717,8 @@ static int __init GobiInit( void )
    // Registering driver to USB serial core layer
 #if (LINUX_VERSION_CODE < KERNEL_VERSION( 3,4,0 ))
       nRetval = usb_serial_register( &gGobiDevice );
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION( 3,5,0 ))
+      nRetval = usb_serial_register_drivers( &GobiDriver, gGobiDevices, NULL);
 #else
       nRetval = usb_serial_register_drivers( &GobiDriver, gGobiDevices);
 #endif
@@ -759,6 +761,8 @@ static void __exit GobiExit( void )
 #if (LINUX_VERSION_CODE < KERNEL_VERSION( 3,4,0 ))
    usb_deregister( &GobiDriver );
    usb_serial_deregister( &gGobiDevice );
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION( 3,5,0 ))
+   usb_serial_deregister_drivers( gGobiDevices );
 #else
    usb_serial_deregister_drivers( &GobiDriver, gGobiDevices );
 #endif
