@@ -1,9 +1,9 @@
 /*===========================================================================
-FILE: 
+FILE:
    GobiSerial.c
 
 DESCRIPTION:
-   Linux Qualcomm Serial USB driver Implementation 
+   Linux Qualcomm Serial USB driver Implementation
 
 PUBLIC DRIVER FUNCTIONS:
    GobiProbe
@@ -46,7 +46,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include <linux/tty.h>
 #include <linux/tty_flip.h>
-#include <linux/usb.h> 
+#include <linux/usb.h>
 #include <linux/usb/serial.h>
 #include <linux/version.h>
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION( 3,3,0 ))
@@ -72,11 +72,11 @@ static int debug;
 // This function is not exported, which is why we have to use a pointer
 // instead of just calling it.
 #if (LINUX_VERSION_CODE <= KERNEL_VERSION( 2,6,26 ))
-   void (* gpClose)( 
+   void (* gpClose)(
       struct usb_serial_port *,
       struct file * );
 #elif (LINUX_VERSION_CODE <= KERNEL_VERSION( 2,6,30 ))
-   void (* gpClose)( 
+   void (* gpClose)(
       struct tty_struct *,
       struct usb_serial_port *,
       struct file * );
@@ -97,9 +97,9 @@ static int debug;
 
 // Attach to correct interfaces
 static int GobiProbe(
-   struct usb_serial * pSerial, 
+   struct usb_serial * pSerial,
    const struct usb_device_id * pID );
-   
+
 // Start GPS if GPS port, run usb_serial_generic_open
 #if (LINUX_VERSION_CODE <= KERNEL_VERSION( 2,6,26 ))
    int GobiOpen(
@@ -118,11 +118,11 @@ static int GobiProbe(
 
 // Stop GPS if GPS port, run usb_serial_generic_close
 #if (LINUX_VERSION_CODE <= KERNEL_VERSION( 2,6,26 ))
-   void GobiClose( 
+   void GobiClose(
       struct usb_serial_port *,
       struct file * );
 #elif (LINUX_VERSION_CODE <= KERNEL_VERSION( 2,6,30 ))
-   void GobiClose( 
+   void GobiClose(
       struct tty_struct *,
       struct usb_serial_port *,
       struct file * );
@@ -138,7 +138,7 @@ static void GobiReadBulkCallback( struct urb * pURB );
 #endif
 
 // Set reset_resume flag
-int GobiSuspend( 
+int GobiSuspend(
    struct usb_interface *     pIntf,
    pm_message_t               powerEvent );
 
@@ -152,7 +152,7 @@ int GobiResume( struct usb_interface * pIntf );
 /*=========================================================================*/
 // Qualcomm Gobi 3000 VID/PIDs
 /*=========================================================================*/
-static struct usb_device_id GobiVIDPIDTable[] = 
+static struct usb_device_id GobiVIDPIDTable[] =
 {
    { USB_DEVICE( 0x05c6, 0x920c ) },   // Gobi 3000 QDL device
    { USB_DEVICE( 0x05c6, 0x920d ) },   // Gobi 3000 Composite Device
@@ -185,10 +185,10 @@ static struct usb_driver GobiDriver =
 /*=========================================================================*/
 // Struct usb_serial_driver
 /*=========================================================================*/
-static struct usb_serial_driver gGobiDevice = 
+static struct usb_serial_driver gGobiDevice =
 {
-   .driver = 
-   {   
+   .driver =
+   {
       .owner     = THIS_MODULE,
       .name      = "GobiSerial driver",
    },
@@ -224,7 +224,7 @@ DESCRIPTION:
    Attach to correct interfaces
 
 PARAMETERS:
-   pSerial    [ I ] - Serial structure 
+   pSerial    [ I ] - Serial structure
    pID        [ I ] - VID PID table
 
 RETURN VALUE:
@@ -232,7 +232,7 @@ RETURN VALUE:
          zero on success
 ===========================================================================*/
 static int GobiProbe(
-   struct usb_serial *             pSerial, 
+   struct usb_serial *             pSerial,
    const struct usb_device_id *    pID )
 {
    // Assume failure
@@ -258,15 +258,15 @@ static int GobiProbe(
    DBG( "Num Interfaces = %d\n", nNumInterfaces );
    nInterfaceNum = pSerial->interface->cur_altsetting->desc.bInterfaceNumber;
    DBG( "This Interface = %d\n", nInterfaceNum );
-   
+
    if (nNumInterfaces == 1)
    {
       // QDL mode?
-      if (nInterfaceNum == 1 || nInterfaceNum == 0) 
+      if (nInterfaceNum == 1 || nInterfaceNum == 0)
       {
          DBG( "QDL port found\n" );
-         nRetval = usb_set_interface( pSerial->dev, 
-                                      nInterfaceNum, 
+         nRetval = usb_set_interface( pSerial->dev,
+                                      nInterfaceNum,
                                       0 );
          if (nRetval < 0)
          {
@@ -281,28 +281,28 @@ static int GobiProbe(
    else
    {
       // Composite mode
-      if (nInterfaceNum == 2) 
+      if (nInterfaceNum == 2)
       {
          DBG( "Modem port found\n" );
-         nRetval = usb_set_interface( pSerial->dev, 
-                                      nInterfaceNum, 
+         nRetval = usb_set_interface( pSerial->dev,
+                                      nInterfaceNum,
                                       0 );
          if (nRetval < 0)
          {
             DBG( "Could not set interface, error %d\n", nRetval );
          }
       }
-      else if (nInterfaceNum == 3) 
+      else if (nInterfaceNum == 3)
       {
          DBG( "GPS port found\n" );
-         nRetval = usb_set_interface( pSerial->dev, 
-                                      nInterfaceNum, 
+         nRetval = usb_set_interface( pSerial->dev,
+                                      nInterfaceNum,
                                       0 );
          if (nRetval < 0)
          {
             DBG( "Could not set interface, error %d\n", nRetval );
          }
-         
+
          // Check for recursion
          if (pSerial->type->close != GobiClose)
          {
@@ -320,7 +320,7 @@ static int GobiProbe(
 
    if (nRetval == 0)
    {
-      // Clearing endpoint halt is a magic handshake that brings 
+      // Clearing endpoint halt is a magic handshake that brings
       // the device out of low power (airplane) mode
       // NOTE: FCC verification should be done before this, if required
       struct usb_host_endpoint * pEndpoint;
@@ -344,7 +344,7 @@ static int GobiProbe(
             break;
          }
       }
-   } 
+   }
 
    return nRetval;
 }
@@ -383,9 +383,9 @@ int GobiOpen(
    const char startMessage[] = "$GPS_START";
    int nResult;
    int bytesWrote;
-   
+
    DBG( "\n" );
-   
+
    // Test parameters
    if ( (pPort == NULL)
    ||   (pPort->serial == NULL)
@@ -396,7 +396,7 @@ int GobiOpen(
       DBG( "invalid parameter\n" );
       return -EINVAL;
    }
-   
+
    // Is this the GPS port?
    if (pPort->serial->interface->cur_altsetting->desc.bInterfaceNumber == 3)
    {
@@ -415,13 +415,13 @@ int GobiOpen(
       }
       if (bytesWrote != sizeof( startMessage ))
       {
-         DBG( "invalid write size %d, %lu\n", 
-              bytesWrote, 
+         DBG( "invalid write size %d, %lu\n",
+              bytesWrote,
               sizeof( startMessage ) );
          return -EIO;
-      }      
+      }
    }
-   
+
    // Pass to usb_serial_generic_open
 #if (LINUX_VERSION_CODE <= KERNEL_VERSION( 2,6,26 ))
    return usb_serial_generic_open( pPort, pFilp );
@@ -460,9 +460,9 @@ void GobiClose( struct usb_serial_port * pPort )
    const char stopMessage[] = "$GPS_STOP";
    int nResult;
    int bytesWrote;
-   
+
    DBG( "\n" );
-   
+
    // Test parameters
    if ( (pPort == NULL)
    ||   (pPort->serial == NULL)
@@ -473,7 +473,7 @@ void GobiClose( struct usb_serial_port * pPort )
       DBG( "invalid parameter\n" );
       return;
    }
-   
+
    // Is this the GPS port?
    if (pPort->serial->interface->cur_altsetting->desc.bInterfaceNumber == 3)
    {
@@ -491,19 +491,19 @@ void GobiClose( struct usb_serial_port * pPort )
       }
       if (bytesWrote != sizeof( stopMessage ))
       {
-         DBG( "invalid write size %d, %lu\n", 
-              bytesWrote, 
+         DBG( "invalid write size %d, %lu\n",
+              bytesWrote,
               sizeof( stopMessage ) );
-      }      
+      }
    }
-   
+
    // Pass to usb_serial_generic_close
    if (gpClose == NULL)
    {
       DBG( "NULL gpClose\n" );
       return;
    }
-   
+
 #if (LINUX_VERSION_CODE <= KERNEL_VERSION( 2,6,26 ))
    gpClose( pPort, pFilp );
 #elif (LINUX_VERSION_CODE <= KERNEL_VERSION( 2,6,30 ))
@@ -523,7 +523,7 @@ DESCRIPTION:
    Read data from USB, push to TTY and user space
 
 PARAMETERS:
-   pURB  [ I ] - USB Request Block (urb) that called us 
+   pURB  [ I ] - USB Request Block (urb) that called us
 
 RETURN VALUE:
 ===========================================================================*/
@@ -534,26 +534,26 @@ static void GobiReadBulkCallback( struct urb * pURB )
    int nResult;
    int nRoom = 0;
    unsigned int pipeEP;
-   
+
    DBG( "port %d\n", pPort->number );
 
-   if (pURB->status != 0) 
+   if (pURB->status != 0)
    {
       DBG( "nonzero read bulk status received: %d\n", pURB->status );
 
       return;
    }
 
-   usb_serial_debug_data( debug, 
-                          &pPort->dev, 
-                          __FUNCTION__, 
-                          pURB->actual_length, 
+   usb_serial_debug_data( debug,
+                          &pPort->dev,
+                          __FUNCTION__,
+                          pURB->actual_length,
                           pURB->transfer_buffer );
 
    // We do no port throttling
 
    // Push data to tty layer and user space read function
-   if (pTTY != 0 && pURB->actual_length) 
+   if (pTTY != 0 && pURB->actual_length)
    {
       nRoom = tty_buffer_request_room( pTTY, pURB->actual_length );
       DBG( "room size %d %d\n", nRoom, 512 );
@@ -564,18 +564,18 @@ static void GobiReadBulkCallback( struct urb * pURB )
       }
    }
 
-   pipeEP = usb_rcvbulkpipe( pPort->serial->dev, 
+   pipeEP = usb_rcvbulkpipe( pPort->serial->dev,
                              pPort->bulk_in_endpointAddress );
 
    // For continuous reading
-   usb_fill_bulk_urb( pPort->read_urb, 
+   usb_fill_bulk_urb( pPort->read_urb,
                       pPort->serial->dev,
                       pipeEP,
                       pPort->read_urb->transfer_buffer,
                       pPort->read_urb->transfer_buffer_length,
-                      GobiReadBulkCallback, 
+                      GobiReadBulkCallback,
                       pPort );
-   
+
    nResult = usb_submit_urb( pPort->read_urb, GFP_ATOMIC );
    if (nResult != 0)
    {
@@ -600,17 +600,17 @@ RETURN VALUE:
    int - 0 for success
          negative errno for failure
 ===========================================================================*/
-int GobiSuspend( 
+int GobiSuspend(
    struct usb_interface *     pIntf,
    pm_message_t               powerEvent )
 {
    struct usb_serial * pDev;
-   
+
    if (pIntf == 0)
    {
       return -ENOMEM;
    }
-   
+
    pDev = usb_get_intfdata( pIntf );
    if (pDev == NULL)
    {
@@ -622,7 +622,7 @@ int GobiSuspend(
    {
       pDev->dev->reset_resume = 1;
    }
-   
+
    // Run usb_serial's suspend function
    return usb_serial_suspend( pIntf, powerEvent );
 }
@@ -718,7 +718,7 @@ static int __init GobiInit( void )
 #if (LINUX_VERSION_CODE < KERNEL_VERSION( 3,4,0 ))
       nRetval = usb_serial_register( &gGobiDevice );
 #elif (LINUX_VERSION_CODE >= KERNEL_VERSION( 3,5,0 ))
-      nRetval = usb_serial_register_drivers( &GobiDriver, gGobiDevices, NULL);
+      nRetval = usb_serial_register_drivers( gGobiDevices, "Gobi", GobiVIDPIDTable);
 #else
       nRetval = usb_serial_register_drivers( &GobiDriver, gGobiDevices);
 #endif
@@ -731,7 +731,7 @@ static int __init GobiInit( void )
    // Registering driver to USB core layer
 #if (LINUX_VERSION_CODE < KERNEL_VERSION( 3,4,0 ))
    nRetval = usb_register( &GobiDriver );
-   if (nRetval != 0) 
+   if (nRetval != 0)
    {
       usb_serial_deregister( &gGobiDevice );
       return nRetval;
@@ -740,7 +740,7 @@ static int __init GobiInit( void )
 
    // This will be shown whenever driver is loaded
    printk( KERN_INFO "%s: %s\n", DRIVER_DESC, DRIVER_VERSION );
-   
+
    return nRetval;
 }
 
