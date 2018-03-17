@@ -66,7 +66,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #define MAX_BULK_EPS         6
 
 // Debug flag
-static int debug;
+static bool debug;
 
 // Global pointer to usb_serial_generic_close function
 // This function is not exported, which is why we have to use a pointer
