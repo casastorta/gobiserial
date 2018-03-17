@@ -1,2 +1,12 @@
+GobiSerial/modules.order
+GobiSerial/.tmp_versions/
+GobiSerial/Module.symvers
+*.ko
+*.ko.cmd
+*.mod.c
+*.mod.o.cmd
+*.o
+*.o.cmd
 *.patch
 *.orig
+*.swp
