@@ -1,3 +1,5 @@
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
 # GobiSerial for Qualcomm 3000 modems patched for new Linux kernels
 
 This project aims to introduce support to the GobiSerial module (needed to
